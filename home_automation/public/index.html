@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Home Control Interface</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .device-card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .device-name {
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .status {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .status.online {
+      background-color: #4CAF50;
+    }
+    .status.offline {
+      background-color: #F44336;
+    }
+    .controls {
+      padding: 10px 0;
+    }
+    button {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    button:hover {
+      background-color: #0b7dda;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .slider {
+      width: 100%;
+      margin: 10px 0;
+    }
+    .connection-status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .connection-status.connected {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .connection-status.disconnected {
+      background-color: #F44336;
+      color: white;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .status-item {
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align: center;">Smart Home Control Center</h1>
+  
+  <div style="text-align: center; margin-bottom: 20px;">
+    <div class="connection-status disconnected" id="connection-status">Disconnected from Network</div>
+    <p><span id="devices-count">0</span> devices connected | Network: Home_WiFi | Signal: Strong</p>
+  </div>
+
+  <div class="status-grid" id="status-grid">
+    Loading device status...
+  </div>
+  
+  <div class="dashboard">
+    <div class="device-card">
+      <div class="device-header">
+        <span class="device-name"><span class="status offline" id="thermostat-status"></span>Thermostat</span>
+        <span>ID: TH-001</span>
+      </div>
+      <div class="controls">
+        <p>Current Temperature: 22°C</p>
+        <p>Target: <span id="temp-value">21</span>°C</p>
+        <input type="range" min="16" max="30" value="21" class="slider" id="temp-slider" disabled>
+        <div>
+          <button id="heat-btn" disabled>Heat</button>
+          <button id="cool-btn" disabled>Cool</button>
+          <button id="auto-btn" disabled>Auto</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="device-card">
+      <div class="device-header">
+        <span class="device-name"><span class="status offline" id="light-status"></span>Light Control</span>
+        <span>ID: LC-002</span>
+      </div>
+      <div class="controls">
+        <p>Brightness: <span id="brightness-value">70</span>%</p>
+        <input type="range" min="0" max="100" value="70" class="slider" id="brightness-slider" disabled>
+        <div>
+          <button id="light-on-btn" disabled>On</button>
+          <button id="light-off-btn" disabled>Off</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="device-card">
+      <div class="device-header">
+        <span class="device-name"><span class="status offline" id="camera-status"></span>Security Camera</span>
+        <span>ID: SC-003</span>
+      </div>
+      <div class="controls">
+        <div style="text-align: center; margin-bottom: 10px;">
+          <div style="width: 280px; height: 150px; background-color: #ddd; margin: 0 auto; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+            <span id="camera-feed-status">Camera Feed</span>
+          </div>
+        </div>
+        <div>
+          <button id="camera-live-btn" disabled>View Live</button>
+          <button id="camera-record-btn" disabled>Record</button>
+          <button id="camera-stop-btn" disabled>Stop</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="device-card">
+      <div class="device-header">
+        <span class="device-name"><span class="status offline" id="lock-status"></span>Smart Lock</span>
+        <span>ID: SL-004</span>
+      </div>
+      <div class="controls">
+        <p style="text-align: center; font-size: 18px;">Status: <strong id="lock-state">Locked</strong></p>
+        <div style="text-align: center;">
+          <button id="unlock-btn" style="background-color: #4CAF50;" disabled>Unlock</button>
+          <button id="lock-btn" style="background-color: #F44336;" disabled>Lock</button>
+          <button id="access-log-btn" disabled>Access Log</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="device-card">
+      <div class="device-header">
+        <span class="device-name"><span class="status offline" id="motion-status"></span>Motion Sensor</span>
+        <span>ID: MS-005</span>
+      </div>
+      <div class="controls">
+        <p style="text-align: center; font-size: 18px;">Status: <strong id="motion-state">No Movement</strong></p>
+        <div>
+          <p>Last triggered: <span id="motion-last">Never</span></p>
+          <button id="motion-test-btn" disabled>Test Sensor</button>
+          <button id="motion-history-btn" disabled>View History</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // WebSocket connection
+    let socket;
+    let connected = false;
+    
+    function connectWebSocket() {
+      socket = new WebSocket(`ws://${window.location.hostname}:8765`);
+      
+      socket.onopen = function() {
+        console.log('Connected to server');
+        connected = true;
+        updateConnectionStatus(true);
+      };
+      
+      socket.onclose = function() {
+        console.log('Disconnected from server');
+        connected = false;
+        updateConnectionStatus(false);
+        setTimeout(connectWebSocket, 5000);
+      };
+      
+      socket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+        connected = false;
+        updateConnectionStatus(false);
+      };
+      
+      socket.onmessage = function(event) {
+        try {
+          const message = JSON.parse(event.data);
+          console.log('Message received:', message);
+          
+          if (message.type === 'status') {
+            updateDeviceStatus(message.data);
+            updateConnectionStatus(true);
+          } else if (message.type === 'error') {
+            alert(message.message);
+          }
+        } catch (e) {
+          console.error('Error processing message:', e);
+        }
+      };
+    }
+    
+    function updateConnectionStatus(isConnected) {
+      connected = isConnected;
+      const statusElement = document.getElementById('connection-status');
+      
+      if (isConnected) {
+        statusElement.textContent = 'Connected to Network';
+        statusElement.classList.remove('disconnected');
+        statusElement.classList.add('connected');
+        enableControls();
+      } else {
+        statusElement.textContent = 'Disconnected from Network';
+        statusElement.classList.remove('connected');
+        statusElement.classList.add('disconnected');
+        disableControls();
+      }
+    }
+    
+    function enableControls() {
+      document.querySelectorAll('button, input[type="range"]').forEach(element => {
+        element.disabled = false;
+      });
+    }
+    
+    function disableControls() {
+      document.querySelectorAll('button, input[type="range"]').forEach(element => {
+        element.disabled = true;
+      });
+    }
+    
+    function updateDeviceStatus(data) {
+      // Update device count
+      document.getElementById('devices-count').textContent = Object.keys(data).length;
+      
+      // Update status grid
+      let statusHtml = '';
+      const deviceMapping = {
+        'thermostat': { name: 'Thermostat', status: data.thermostat },
+        'light': { name: 'Light Control', status: data.light },
+        'camera': { name: 'Security Camera', status: data.camera },
+        'lock': { name: 'Smart Lock', status: data.lock },
+        'motion': { name: 'Motion Sensor', status: data.motion }
+      };
+
+      for (const [device, info] of Object.entries(deviceMapping)) {
+        if (info.status) {
+          const statusClass = info.status.status === 'online' ? 'online' : 'offline';
+          let statusText = info.status.status;
+          
+          if (device === 'thermostat') {
+            statusText += ` (${info.status.value}°C, ${info.status.mode})`;
+          } else if (device === 'light') {
+            statusText += ` (${info.status.value}%)`;
+          } else if (device === 'camera') {
+            statusText += ` (${info.status.recording ? 'Recording' : 'Idle'})`;
+          } else if (device === 'lock') {
+            statusText += ` (${info.status.locked ? 'Locked' : 'Unlocked'})`;
+          } else if (device === 'motion') {
+            statusText += ` (${info.status.motionDetected ? 'Movement' : 'No Movement'})`;
+          }
+          
+          statusHtml += `
+            <div class="status-item">
+              <strong>${info.name}</strong><br>
+              <span class="status ${statusClass}"></span> ${statusText}
+            </div>
+          `;
+        }
+      }
+      document.getElementById('status-grid').innerHTML = statusHtml;
+      
+      // Update individual device cards
+      if (data.thermostat) {
+        document.getElementById('thermostat-status').className = `status ${data.thermostat.status}`;
+        document.getElementById('temp-value').textContent = data.thermostat.value;
+        document.getElementById('temp-slider').value = data.thermostat.value;
+      }
+      
+      if (data.light) {
+        document.getElementById('light-status').className = `status ${data.light.status}`;
+        document.getElementById('brightness-value').textContent = data.light.value;
+        document.getElementById('brightness-slider').value = data.light.value;
+      }
+      
+      if (data.camera) {
+        document.getElementById('camera-status').className = `status ${data.camera.status}`;
+        document.getElementById('camera-feed-status').textContent = data.camera.recording ? 'Recording...' : 'Camera Feed';
+      }
+      
+      if (data.lock) {
+        document.getElementById('lock-status').className = `status ${data.lock.status}`;
+        document.getElementById('lock-state').textContent = data.lock.locked ? 'Locked' : 'Unlocked';
+      }
+      
+      if (data.motion) {
+        document.getElementById('motion-status').className = `status ${data.motion.status}`;
+        if (data.motion.lastDetected) {
+          document.getElementById('motion-state').textContent = 'Motion Detected';
+          document.getElementById('motion-last').textContent = data.motion.lastDetected;
+          
+          setTimeout(() => {
+            document.getElementById('motion-state').textContent = 'No Movement';
+          }, 3000);
+        }
+      }
+    }
+    
+    // Send command to the server
+    function sendCommand(device, action, value = null) {
+      if (!connected) {
+        alert('Not connected to Network');
+        return;
+      }
+      
+      const command = {
+        type: 'command',
+        device: device,
+        action: action
+      };
+      
+      if (value !== null) {
+        command.value = value;
+      }
+      
+      socket.send(JSON.stringify(command));
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Thermostat controls
+      document.getElementById('temp-slider').addEventListener('change', function() {
+        const value = this.value;
+        document.getElementById('temp-value').textContent = value;
+        sendCommand('thermostat', 'set', value);
+      });
+      
+      document.getElementById('heat-btn').addEventListener('click', function() {
+        sendCommand('thermostat', 'mode', 'heat');
+      });
+      
+      document.getElementById('cool-btn').addEventListener('click', function() {
+        sendCommand('thermostat', 'mode', 'cool');
+      });
+      
+      document.getElementById('auto-btn').addEventListener('click', function() {
+        sendCommand('thermostat', 'mode', 'auto');
+      });
+      
+      // Light controls
+      document.getElementById('brightness-slider').addEventListener('change', function() {
+        const value = this.value;
+        document.getElementById('brightness-value').textContent = value;
+        sendCommand('light', 'set', value);
+      });
+      
+      document.getElementById('light-on-btn').addEventListener('click', function() {
+        sendCommand('light', 'set', 100);
+      });
+      
+      document.getElementById('light-off-btn').addEventListener('click', function() {
+        sendCommand('light', 'set', 0);
+      });
+      
+      // Camera controls
+      document.getElementById('camera-live-btn').addEventListener('click', function() {
+        sendCommand('camera', 'live');
+      });
+      
+      document.getElementById('camera-record-btn').addEventListener('click', function() {
+        sendCommand('camera', 'record');
+      });
+      
+      document.getElementById('camera-stop-btn').addEventListener('click', function() {
+        sendCommand('camera', 'stop');
+      });
+      
+      // Lock controls
+      document.getElementById('unlock-btn').addEventListener('click', function() {
+        sendCommand('lock', 'unlock');
+      });
+      
+      document.getElementById('lock-btn').addEventListener('click', function() {
+        sendCommand('lock', 'lock');
+      });
+      
+      document.getElementById('access-log-btn').addEventListener('click', function() {
+        sendCommand('lock', 'log');
+      });
+      
+      // Motion sensor controls
+      document.getElementById('motion-test-btn').addEventListener('click', function() {
+        sendCommand('motion', 'trigger');
+      });
+      
+      document.getElementById('motion-history-btn').addEventListener('click', function() {
+        sendCommand('motion', 'history');
+      });
+      
+      // Initialize WebSocket connection
+      connectWebSocket();
+    });
+  </script>
+</body>
+</html>
